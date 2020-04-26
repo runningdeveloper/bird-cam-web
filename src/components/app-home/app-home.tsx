@@ -136,7 +136,6 @@ export class AppHome {
         } expand="block">Manual Prediction</ion-button>
 
       <ion-button onClick={async ()=>{
-          console.log('hey')
           this.startDetectionTimer()
           
         }

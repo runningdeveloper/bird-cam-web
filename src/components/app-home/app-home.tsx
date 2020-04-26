@@ -12,7 +12,8 @@ export class AppHome {
   @State() cameraReady = false;
   video = null;
   model = null;
-  // @State() canvas = null;
+  @State() selectedDevice = null;
+  @State() devices: MediaDeviceInfo[];
   @State() doingDetect = false;
   @Element() el: HTMLElement;
   timer: number;  
@@ -31,15 +32,28 @@ export class AppHome {
   
   async componentWillLoad() {
     
+     // get devices 
+     const mediaDevices = await navigator.mediaDevices.enumerateDevices()
+     console.log({mediaDevices})
+     this.devices = mediaDevices.filter(a=>a.kind === 'videoinput')
+     if(this.devices && this.devices.length>0){
+      this.selectedDevice = this.devices[0]
+     }
+     
 
-    // this.model = await mobilenet.load();
-    this.model = await cocoSsd.load();
-    console.log(this.model)
+     this.loadModel()
     
 
   }
 
+  async loadModel(){
+    // this.model = await mobilenet.load();
+    this.model = await cocoSsd.load();
+    console.log(this.model)
+  }
+
   async snapAndDetect(){
+    console.log('snap and detect')
     this.doingDetect = true;
     const context = this.canvas.getContext('2d');
     context.drawImage(this.video, 0, 0, this.canvas.width, this.canvas.height);
@@ -59,27 +73,31 @@ export class AppHome {
           saveAs(blob, `bird-${Date.now()}.png`);
       });
 
-      this.doingDetect = false;
-
-
       }
     }
-
-    this.doingDetect = false;
-
-    
-    
+        
   }
 
 
-  componentDidLoad(){
+  async componentDidLoad(){
     this.video = this.el.querySelector("#video") as HTMLVideoElement;
     this.canvas = this.el.querySelector("#canvas") as HTMLCanvasElement;
     this.canvasBig = this.el.querySelector("#canvasBig") as HTMLCanvasElement;
+    
+    this.startCamera(this.selectedDevice.deviceId)
+    
+  }
+
+  startCamera(deviceId: string){
+    console.log('start cam', deviceId)
+
+    // if(this.video){
+    //   this.video.stop();
+    // }
 
     navigator.mediaDevices
-    .getUserMedia({ video: {width: { min: 1280 },
-      height: { min: 720 }, facingMode: { exact: "environment" }}, audio: false  })
+    .getUserMedia({ video: {width: { min: 640 },
+      height: { min: 280 }, deviceId: { exact: deviceId }}, audio: false  })
     .then(stream => {
       this.video.srcObject = stream //window.URL.createObjectURL(stream);
       return this.video.play();
@@ -96,6 +114,7 @@ export class AppHome {
       // this.state = Mode.Error;
       // this.errorMessage = "There was a problem starting your camera";
     });
+
   }
 
   startDetectionTimer(){
@@ -119,11 +138,13 @@ export class AppHome {
       </ion-header>,
 
       <ion-content class="ion-padding">
-        {this.doingDetect && <p>Detecting!</p>}
+        {this.doingDetect && <ion-progress-bar type="indeterminate"></ion-progress-bar>}
         <video id="video">Video stream not available.</video>
+        {/* <br/> */}
         <canvas style={{display: 'none'}} id="canvas" width="320" height="240"></canvas>
         {/* for the ful size temp */}
-        <canvas style={{display: 'none'}}  id="canvasBig" width="1280" height="720"></canvas>
+        {/* <br/> */}
+        <canvas style={{display: 'none'}} id="canvasBig" width="640" height="480"></canvas>
 
         {this.cameraReady&&<p>Camera Ready</p>}
         {!this.cameraReady&& <p>Camera Loading</p>}
@@ -131,7 +152,13 @@ export class AppHome {
         {!this.model&& <p>Model Loading</p>}
 
         {/* <ion-loading></ion-loading> */}
-
+      {this.devices && this.devices.length>0 &&
+        <ion-select onIonChange={(e)=> {
+          this.selectedDevice = e.detail.value
+          this.startCamera(this.selectedDevice.deviceId)
+        }} placeholder="Select One" value={this.selectedDevice} selected-text={this.selectedDevice?this.selectedDevice.label:""} ok-text="Select" cancel-text="Dismiss">
+          {this.devices.map(a=><ion-select-option value={a}>{a.label}</ion-select-option>)}
+        </ion-select>}
 
         <ion-button onClick={async ()=>{
           console.log('hey')

@@ -6,7 +6,7 @@ name: Build and deploy
 on:
   push:
     branches:
-      - source  master
+      - master
 
 jobs:
   deploy:

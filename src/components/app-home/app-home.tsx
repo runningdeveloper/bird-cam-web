@@ -10,10 +10,10 @@ import { saveAs } from 'file-saver';
 export class AppHome {
 
   @State() cameraReady = false;
-  @State() video = null;
-
+  video = null;
+  model = null;
   // @State() canvas = null;
-  @State() model = null;
+  @State() doingDetect = false;
   @Element() el: HTMLElement;
   timer: number;  
   canvasBig: HTMLCanvasElement
@@ -40,7 +40,7 @@ export class AppHome {
   }
 
   async snapAndDetect(){
-
+    this.doingDetect = true;
     const context = this.canvas.getContext('2d');
     context.drawImage(this.video, 0, 0, this.canvas.width, this.canvas.height);
 
@@ -59,8 +59,13 @@ export class AppHome {
           saveAs(blob, `bird-${Date.now()}.png`);
       });
 
+      this.doingDetect = false;
+
+
       }
     }
+
+    this.doingDetect = false;
 
     
     
@@ -96,7 +101,7 @@ export class AppHome {
   startDetectionTimer(){
     this.timer = window.setInterval(() => {
       this.snapAndDetect()
-    }, 5000);
+    }, 2000);
   }
 
   // TODO: stop button
@@ -114,7 +119,7 @@ export class AppHome {
       </ion-header>,
 
       <ion-content class="ion-padding">
-
+        {this.doingDetect && <p>Detecting!</p>}
         <video id="video">Video stream not available.</video>
         <canvas style={{display: 'none'}} id="canvas" width="320" height="240"></canvas>
         {/* for the ful size temp */}

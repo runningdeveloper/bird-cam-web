@@ -19,7 +19,7 @@ export class AppHome {
   canvasBig: HTMLCanvasElement
   canvas: HTMLCanvasElement
 
-  whatToDetect = "person"
+  whatToDetect = "bird"
 
 
   // init() {

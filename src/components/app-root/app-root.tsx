@@ -10,7 +10,7 @@ export class AppRoot {
     return (
       <ion-app>
         <ion-router useHash={false}>
-          <ion-route url="/" component="app-home" />
+          <ion-route url="/bird-cam-web/" component="app-home" />
         </ion-router>
         <ion-nav />
       </ion-app>

@@ -213,6 +213,7 @@ export class AppHome {
           onClick={async () => {
             console.log("hey");
             this.snapAndDetect();
+            this.doingDetect = false
           }}
           expand="block"
         >

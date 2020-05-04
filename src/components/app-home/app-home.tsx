@@ -17,7 +17,7 @@ export class AppHome {
   @State() doingDetect = false;
   @Element() el: HTMLElement;
   timer: number;
-  pictureSaveCanvas: HTMLCanvasElement;
+  imageCapture: ImageCapture;
   predictionCanvas: HTMLCanvasElement;
   fakeTimer: any
   fakeTimerCount = 0
@@ -47,19 +47,9 @@ export class AppHome {
 
   // draw the video to the prediction canvas and large canvas for picture saving
   async drawTempCanvas(){
-    // small for the prediction not to struggle (assumption)
+    // small for the prediction not to struggle (an assumption)
     const context = this.predictionCanvas.getContext("2d");
     context.drawImage(this.video, 0, 0, this.predictionCanvas.width, this.predictionCanvas.height);
-
-    // same size for the picture snap to be good quality
-    const context2 = this.pictureSaveCanvas.getContext("2d");
-    context2.drawImage(
-      this.video,
-      0,
-      0,
-      this.pictureSaveCanvas.width,
-      this.pictureSaveCanvas.height
-    );
   }
 
   async snapAndDetect() {
@@ -71,12 +61,11 @@ export class AppHome {
     console.log({ predictions });
     if (predictions && predictions.length > 0) {
       if (predictions.find(a => a.class === this.whatToDetect)) {
-        console.log("found a bird!!!");
+        console.log(`found a ${this.whatToDetect}!!!`);
 
-        this.pictureSaveCanvas.toBlob((blob) => {
-          console.log("blob", blob);
-          saveAs(blob, `${this.whatToDetect}-${Date.now()}.png`);
-        });
+        const imageBlob = await this.imageCapture.takePhoto()
+        saveAs(imageBlob, `${this.whatToDetect}-${Date.now()}.jpg`);
+
       }
     }
   }
@@ -88,16 +77,16 @@ export class AppHome {
 
   async triggerFakeDownloads(){
     // to tigger the multiple download thing
-    this.fakeTimer = window.setInterval(() => {
-      if(this.fakeTimerCount>3){
+    this.fakeTimer = window.setInterval(async () => {
+      if(this.fakeTimerCount>2){
         window.clearInterval(this.fakeTimer);
         this.fakeTimerCount = 0
       }
       this.fakeTimerCount++
       this.drawTempCanvas()
-      this.pictureSaveCanvas.toBlob(function(blob) {
-        saveAs(blob, `fake-${Date.now()}.png`);
-      });
+      const imageBlob = await this.imageCapture.takePhoto()
+      saveAs(imageBlob, `test-${Date.now()}.jpg`);
+        
     }, 500);
     
   }
@@ -105,7 +94,6 @@ export class AppHome {
   async componentDidLoad() {
     this.video = this.el.querySelector("#video") as HTMLVideoElement;
     this.predictionCanvas = this.el.querySelector("#predictionCanvas") as HTMLCanvasElement;
-    this.pictureSaveCanvas = this.el.querySelector("#pictureSaveCanvas") as HTMLCanvasElement;
     this.loadModel();
     this.startCamera(this.selectedDevice.deviceId);
   }
@@ -128,6 +116,8 @@ export class AppHome {
       })
       .then(stream => {
         this.video.srcObject = stream; 
+        const mediaStreamTrack = stream.getVideoTracks()[0];
+        this.imageCapture = new ImageCapture(mediaStreamTrack);
         return this.video.play();
       })
       // Now the video is ready set this state so it's actually displayed
@@ -173,12 +163,6 @@ export class AppHome {
           id="predictionCanvas"
           width="320"
           height="240"
-        ></canvas>
-        <canvas
-          style={{ display: "none" }}
-          id="pictureSaveCanvas"
-          width="2000"
-          height="1500"
         ></canvas>
 
           <div>

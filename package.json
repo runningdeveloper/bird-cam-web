@@ -17,7 +17,8 @@
   "devDependencies": {
     "@ionic/core": "^5.0.7",
     "@stencil/core": "^1.12.2",
-    "@types/file-saver": "^2.0.1"
+    "@types/file-saver": "^2.0.1",
+    "@types/w3c-image-capture": "^1.0.2"
   },
   "dependencies": {
     "@rollup/plugin-replace": "^2.3.2",

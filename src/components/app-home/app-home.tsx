@@ -21,6 +21,7 @@ export class AppHome {
   predictionCanvas: HTMLCanvasElement;
   fakeTimer: any
   fakeTimerCount = 0
+  cameraImageCopy: Blob;
 
   @State() whatToDetect = "bird";
 
@@ -50,12 +51,14 @@ export class AppHome {
     // small for the prediction not to struggle (an assumption)
     const context = this.predictionCanvas.getContext("2d");
     context.drawImage(this.video, 0, 0, this.predictionCanvas.width, this.predictionCanvas.height);
+
+    this.cameraImageCopy = await this.imageCapture.takePhoto()
   }
 
   async snapAndDetect() {
     console.log("snap and detect");
     this.doingDetect = true;
-    this.drawTempCanvas()
+    await this.drawTempCanvas()
     // const predictions = await this.model.classify(this.canvas);
     const predictions = await this.model.detect(this.predictionCanvas);
     console.log({ predictions });
@@ -63,8 +66,8 @@ export class AppHome {
       if (predictions.find(a => a.class === this.whatToDetect)) {
         console.log(`found a ${this.whatToDetect}!!!`);
 
-        const imageBlob = await this.imageCapture.takePhoto()
-        saveAs(imageBlob, `${this.whatToDetect}-${Date.now()}.jpg`);
+        // const imageBlob = await this.imageCapture.takePhoto()
+        saveAs(this.cameraImageCopy, `${this.whatToDetect}-${Date.now()}.jpg`);
 
       }
     }

@@ -113,7 +113,8 @@ export class AppHome {
         video: {
           width: { min: 640 },
           height: { min: 480 },
-          deviceId: { exact: deviceId }
+          deviceId: { exact: deviceId },
+          frameRate: { ideal: 10, max: 15 },
         },
         audio: false
       })
@@ -121,7 +122,9 @@ export class AppHome {
         this.video.srcObject = stream; 
         const mediaStreamTrack = stream.getVideoTracks()[0];
         this.imageCapture = new ImageCapture(mediaStreamTrack);
-        return this.video.play();
+        this.video.onloadedmetadata = ()=> {
+          this.video.play();
+        };
       })
       // Now the video is ready set this state so it's actually displayed
       .then(_ => {

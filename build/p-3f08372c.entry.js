@@ -1,0 +1,1 @@
+import{r as s,h as r,H as o}from"./p-5439f137.js";import{g as a}from"./p-9114f801.js";const l=class{constructor(r){s(this,r)}render(){return r(o,{class:a(this)},r("slot",null))}};l.style=":host{display:-ms-flexbox;display:flex;-ms-flex-wrap:wrap;flex-wrap:wrap}";export{l as ion_row}

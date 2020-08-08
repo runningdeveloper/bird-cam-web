@@ -28,19 +28,14 @@ export class AppRemote {
     }
   }
 
-  async componentWillLoad() {
-    console.log("hi");
-  }
-
   async displayConnection(signal: string) {
     this.connectionString = btoa(signal);
   }
 
   async startPeerShare() {
-    console.log("startPeerShare", this.cam);
     this.peer = new SimplePeer({ trickle: false, initiator: this.cam });
 
-    this.peer.on("error", err => console.log("error", err));
+    this.peer.on("error", err => console.error("error", err));
 
     this.peer.on("signal", data => {
       console.log("SIGNAL", JSON.stringify(data));
@@ -52,8 +47,8 @@ export class AppRemote {
     });
 
     this.peer.on("data", data => {
-      console.log("data", data);
-      // this.result = data.toString()
+      console.log("peer data", data);
+
       const result = JSON.parse(data)
       this.peerResult = `${result.id} - ${result.action} - ${result.message}`
       if(result.action === "take-photo"){
@@ -78,17 +73,11 @@ export class AppRemote {
 
     });
 
-    this.peer.on("error", data => {
-      console.error("peer error", data);
-    });
   }
 
   render() {
     return (
       <Host>
-        {/* <app-header pageTitle="Remote"/> */}
-
-        {/* <ion-content class="ion-padding"> */}
         {!this.peer && (
           <div>
             <ion-radio-group
@@ -163,7 +152,6 @@ export class AppRemote {
               <div>
                 <ion-button
                   onClick={async () => {
-                    console.log("send thing");
                     const message = new DataMessage()
                     message.action = "take-photo"
                     message.message = "Take Photo"
@@ -176,12 +164,25 @@ export class AppRemote {
                 >
                   Take Photo
                 </ion-button>
+                <ion-button
+                  onClick={async () => {
+                    const message = new DataMessage()
+                    message.action = "toggle-detection"
+                    message.message = "Toggle Detection"
+                    message.id = Date.now()
+                    this.peer.send(
+                      JSON.stringify(message)
+                    );
+                  }}
+                  expand="block"
+                >
+                  Toggle Detection
+                </ion-button>
                 <p>Latest Result: <span>{this.peerResult}</span></p>
               </div>
             )}
           </div>
         )}
-        {/* </ion-content> */}
       </Host>
     );
   }

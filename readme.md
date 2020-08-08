@@ -1,5 +1,11 @@
 # Bird Cam Web
 
+## Instagram pics follow [birdsoutside](https://www.instagram.com/birdsoutside/)
+
+## Description 
+
+Doesn't work on IOS (Safari soz). Also its probably not very user friendly. 
+
 Simple fun stencil js website to capture birds through the camera using tensorflow js with object detection. Mobile app would be better but hey.
 
 Idea was setup the camera outside in a bird hotspot, leave then come back and have pitures of birds. Haven't tested extensively but I'm getting some bird pics when they are nearby.

@@ -16,19 +16,26 @@
   },
   "devDependencies": {
     "@ionic/core": "^5.0.7",
-    "@stencil/core": "^1.12.2",
+    "@stencil/core": "^1.17.3",
     "@types/file-saver": "^2.0.1",
     "@types/w3c-image-capture": "^1.0.2"
   },
   "dependencies": {
+    "@nuintun/qrcode": "^2.1.1",
+    "@rollup/plugin-node-resolve": "^8.4.0",
     "@rollup/plugin-replace": "^2.3.2",
     "@tensorflow-models/coco-ssd": "^2.0.3",
     "@tensorflow-models/mobilenet": "^2.0.4",
     "@tensorflow/tfjs": "^1.7.3",
     "@tensorflow/tfjs-core": "^1.7.3",
+    "@types/mocha": "^8.0.1",
+    "@types/simple-peer": "^9.6.0",
     "dotenv": "^8.2.0",
     "file-saver": "1.3.8",
+    "readable-stream": "^3.6.0",
     "replace-in-file": "^6.0.0",
-    "replace-in-files-cli": "^0.3.1"
+    "replace-in-files-cli": "^0.3.1",
+    "rollup-plugin-node-polyfills": "^0.2.1",
+    "simple-peer": "^9.7.2"
   }
 }

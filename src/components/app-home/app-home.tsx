@@ -19,13 +19,16 @@ export class AppHome {
   timer: number;
   imageCapture: ImageCapture;
   predictionCanvas: HTMLCanvasElement;
-  fakeTimer: any
-  fakeTimerCount = 0
   cameraImageCopy: Blob;
-
   @State() whatToDetect = "bird";
+  @State() showRemote = false;
+  predictionInterval = 3000
 
   async componentWillLoad() {
+    if (!navigator.mediaDevices) {
+      console.log("cannot access camera");
+      return;
+    }
     // get devices
     const mediaDevices = await navigator.mediaDevices.enumerateDevices();
     console.log({ mediaDevices });
@@ -33,72 +36,84 @@ export class AppHome {
     if (this.devices && this.devices.length > 0) {
       this.selectedDevice = this.devices[0];
     }
-
   }
 
   async loadModel() {
     // this.model = await mobilenet.load();
     try {
       this.model = await cocoSsd.load();
-      this.modelLoaded = true
+      this.modelLoaded = true;
     } catch (error) {
-      this.modelLoaded = false
-    }    
+      this.modelLoaded = false;
+    }
+  }
+
+  async takeCameraPhoto() {
+    // stopping the odd crash
+    if (
+      this.imageCapture.track.readyState === "live" &&
+      this.imageCapture.track.enabled &&
+      !this.imageCapture.track.muted
+    ) {
+      return await this.imageCapture.takePhoto();
+    } else {
+      console.warn("Missed a snap cam busy");
+    }
   }
 
   // draw the video to the prediction canvas and large canvas for picture saving
-  async drawTempCanvas(){
+  async drawTempCanvas() {
     // small for the prediction not to struggle (an assumption)
     const context = this.predictionCanvas.getContext("2d");
-    context.drawImage(this.video, 0, 0, this.predictionCanvas.width, this.predictionCanvas.height);
+    context.drawImage(
+      this.video,
+      0,
+      0,
+      this.predictionCanvas.width,
+      this.predictionCanvas.height
+    );
 
-    this.cameraImageCopy = await this.imageCapture.takePhoto()
+    this.cameraImageCopy = await this.takeCameraPhoto();
   }
 
   async snapAndDetect() {
     console.log("snap and detect");
     this.doingDetect = true;
-    await this.drawTempCanvas()
+    await this.drawTempCanvas();
     // const predictions = await this.model.classify(this.canvas);
     const predictions = await this.model.detect(this.predictionCanvas);
     console.log({ predictions });
     if (predictions && predictions.length > 0) {
-      if (predictions.find(a => a.class === this.whatToDetect)) {
+      if (predictions.find((a: { class: string }) => a.class === this.whatToDetect)) {
         console.log(`found a ${this.whatToDetect}!!!`);
 
         // const imageBlob = await this.imageCapture.takePhoto()
         saveAs(this.cameraImageCopy, `${this.whatToDetect}-${Date.now()}.jpg`);
-
       }
     }
   }
 
   async stopDetection() {
-    this.doingDetect = false
+    this.doingDetect = false;
     window.clearInterval(this.timer);
   }
 
-  async triggerFakeDownloads(){
-    // to tigger the multiple download thing
-    this.fakeTimer = window.setInterval(async () => {
-      if(this.fakeTimerCount>2){
-        window.clearInterval(this.fakeTimer);
-        this.fakeTimerCount = 0
-      }
-      this.fakeTimerCount++
-      this.drawTempCanvas()
-      const imageBlob = await this.imageCapture.takePhoto()
-      saveAs(imageBlob, `test-${Date.now()}.jpg`);
-        
-    }, 500);
-    
+  async triggerCamera() {
+    const imageBlob = await this.takeCameraPhoto();
+    if (imageBlob) {
+      saveAs(imageBlob, `manual-${Date.now()}.jpg`);
+    }
   }
 
   async componentDidLoad() {
     this.video = this.el.querySelector("#video") as HTMLVideoElement;
-    this.predictionCanvas = this.el.querySelector("#predictionCanvas") as HTMLCanvasElement;
+    this.predictionCanvas = this.el.querySelector(
+      "#predictionCanvas"
+    ) as HTMLCanvasElement;
     this.loadModel();
-    this.startCamera(this.selectedDevice.deviceId);
+    if (this.selectedDevice) {
+      this.startCamera(this.selectedDevice.deviceId);
+    }
   }
 
   startCamera(deviceId: string) {
@@ -114,15 +129,15 @@ export class AppHome {
           width: { min: 640 },
           height: { min: 480 },
           deviceId: { exact: deviceId },
-          frameRate: { ideal: 10, max: 15 },
+          frameRate: { ideal: 10, max: 15 }
         },
         audio: false
       })
       .then(stream => {
-        this.video.srcObject = stream; 
+        this.video.srcObject = stream;
         const mediaStreamTrack = stream.getVideoTracks()[0];
         this.imageCapture = new ImageCapture(mediaStreamTrack);
-        this.video.onloadedmetadata = ()=> {
+        this.video.onloadedmetadata = () => {
           this.video.play();
         };
       })
@@ -142,28 +157,26 @@ export class AppHome {
   startDetectionTimer() {
     this.timer = window.setInterval(() => {
       this.snapAndDetect();
-    }, 2000);
+    }, this.predictionInterval);
   }
 
   componentDidUnload() {
     window.clearInterval(this.timer);
-    window.clearInterval(this.fakeTimer);
   }
 
   render() {
     return [
-      <ion-header>
-        <ion-toolbar color="primary">
-          <ion-title>Detector</ion-title>
-        </ion-toolbar>
-      </ion-header>,
+      <app-header pageTitle="Detector" />,
 
       <ion-content class="ion-padding">
         {this.doingDetect && (
-          <ion-badge style={{display: 'block'}} color="danger">Detecting</ion-badge>
+          <ion-badge style={{ display: "block" }} color="danger">
+            Detecting
+          </ion-badge>
         )}
-        <video style={{ width:"320px",
-          height:"240px"}} id="video">Video stream not available.</video>
+        <video style={{ width: "320px", height: "240px" }} id="video">
+          Video stream not available.
+        </video>
         <canvas
           style={{ display: "none" }}
           id="predictionCanvas"
@@ -171,39 +184,68 @@ export class AppHome {
           height="240"
         ></canvas>
 
-          <div>
-        {this.cameraReady && <ion-chip color="success"><span>Camera Ready</span></ion-chip>}
-        {!this.cameraReady && <ion-chip color="warning"><span>Camera Loading or not working</span></ion-chip>}
-        {this.modelLoaded && <ion-chip color="success"><span>Model Ready</span></ion-chip>}
-        {!this.modelLoaded && <ion-chip color="warning"><span>Model Loading</span></ion-chip>}
+        <div>
+          {this.cameraReady && (
+            <ion-chip color="success">
+              <span>Camera Ready</span>
+            </ion-chip>
+          )}
+          {!this.cameraReady && (
+            <ion-chip color="warning">
+              <span>Camera Loading or not working</span>
+            </ion-chip>
+          )}
+          {this.modelLoaded && (
+            <ion-chip color="success">
+              <span>Model Ready</span>
+            </ion-chip>
+          )}
+          {!this.modelLoaded && (
+            <ion-chip color="warning">
+              <span>Model Loading</span>
+            </ion-chip>
+          )}
         </div>
         {/* <ion-loading></ion-loading> */}
-        {this.devices && this.devices.length > 0 && (
-          <ion-select
+        <ion-item>
+          <ion-label>Camera: </ion-label>
+          {this.devices && this.devices.length > 0 && (
+            <ion-select
+              onIonChange={e => {
+                this.selectedDevice = e.detail.value;
+                this.startCamera(this.selectedDevice.deviceId);
+              }}
+              placeholder="Select One"
+              value={this.selectedDevice}
+              selected-text={
+                this.selectedDevice ? this.selectedDevice.label : ""
+              }
+              ok-text="Select"
+              cancel-text="Dismiss"
+            >
+              {this.devices.map(a => (
+                <ion-select-option value={a}>{a.label}</ion-select-option>
+              ))}
+            </ion-select>
+          )}
+        </ion-item>
+
+        <ion-item>
+          <ion-label>What to detect: </ion-label>
+          <ion-input
+            value={this.whatToDetect}
+            placeholder="Enter like bird or cat"
             onIonChange={e => {
-              this.selectedDevice = e.detail.value;
-              this.startCamera(this.selectedDevice.deviceId);
+              this.whatToDetect = e.detail.value;
             }}
-            placeholder="Select One"
-            value={this.selectedDevice}
-            selected-text={this.selectedDevice ? this.selectedDevice.label : ""}
-            ok-text="Select"
-            cancel-text="Dismiss"
-          >
-            {this.devices.map(a => (
-              <ion-select-option value={a}>{a.label}</ion-select-option>
-            ))}
-          </ion-select>
-        )}
-        
-        <span>What to detect: </span>
-        <ion-input value={this.whatToDetect} placeholder="Enter like bird or cat" onIonChange={e => {this.whatToDetect = e.detail.value}}></ion-input>
+          ></ion-input>
+        </ion-item>
 
         <ion-button
           onClick={async () => {
             console.log("hey");
             this.snapAndDetect();
-            this.doingDetect = false
+            this.doingDetect = false;
           }}
           expand="block"
         >
@@ -231,15 +273,39 @@ export class AppHome {
         </ion-button>
 
         <ion-button
+          disabled={!this.cameraReady}
           onClick={() => {
-            this.triggerFakeDownloads();
+            this.triggerCamera();
           }}
           expand="block"
         >
-          Trigger Download Test
+          Manual Trigger Camera
         </ion-button>
-
-        
+        <ion-item>
+          <ion-toggle
+            checked={this.showRemote}
+            onIonChange={ev => (this.showRemote = ev.detail.checked)}
+          ></ion-toggle>
+          <ion-label>Show Remote Thing</ion-label>
+        </ion-item>
+        {this.showRemote && (
+          <app-remote
+            status={this.doingDetect ? "Detection ON" : "Detection OFF"}
+            onRecievedMessage={event => {
+              console.log("parent photo", event.detail);
+              if (event.detail.action === "take-photo") {
+                this.triggerCamera();
+              }
+              if (event.detail.action === "toggle-detection") {
+                if (this.doingDetect) {
+                  this.stopDetection();
+                } else {
+                  this.startDetectionTimer();
+                }
+              }
+            }}
+          ></app-remote>
+        )}
       </ion-content>
     ];
   }

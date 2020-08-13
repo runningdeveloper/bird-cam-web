@@ -23,6 +23,7 @@ export class AppHome {
   @State() whatToDetect = "bird";
   @State() showRemote = false;
   predictionInterval = 3000
+  stream = null as any
 
   async componentWillLoad() {
     if (!navigator.mediaDevices) {
@@ -117,11 +118,10 @@ export class AppHome {
   }
 
   startCamera(deviceId: string) {
-    console.log("start cam", deviceId);
 
-    // if(this.video){
-    //   this.video.stop();
-    // }
+    if(this.stream) {
+      this.stream.getTracks().forEach(track => track.stop()) 
+    }
 
     navigator.mediaDevices
       .getUserMedia({
@@ -134,6 +134,7 @@ export class AppHome {
         audio: false
       })
       .then(stream => {
+        this.stream = stream
         this.video.srcObject = stream;
         const mediaStreamTrack = stream.getVideoTracks()[0];
         this.imageCapture = new ImageCapture(mediaStreamTrack);

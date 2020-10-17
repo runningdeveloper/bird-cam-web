@@ -2,6 +2,7 @@ import { Component, h, State, Element } from "@stencil/core";
 // import * as mobilenet from '@tensorflow-models/mobilenet'
 import * as cocoSsd from "@tensorflow-models/coco-ssd";
 import { saveAs } from "file-saver";
+import 'image-capture'
 
 @Component({
   tag: "app-home",
@@ -50,6 +51,12 @@ export class AppHome {
   }
 
   async takeCameraPhoto() {
+    // handle polyfil
+    if(!this.imageCapture.track){
+      console.log('doing polyfill I think')
+      return await this.imageCapture.takePhoto();
+    }
+
     // stopping the odd crash
     if (
       this.imageCapture.track.readyState === "live" &&
